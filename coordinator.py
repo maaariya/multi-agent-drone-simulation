@@ -10,14 +10,9 @@ class Coordinator:
             if drone.state != "IDLE":
                 continue
 
-            cost = (
-                abs(drone.x - task.x)
-                +
-                abs(drone.y - task.y)
-            )
+            cost = abs(drone.x - task.x) + abs(drone.y - task.y)
 
             if cost < best_cost:
-
                 best_cost = cost
                 best_drone = drone
 

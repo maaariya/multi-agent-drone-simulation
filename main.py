@@ -15,9 +15,9 @@ font = pygame.font.SysFont(None, 20)
 
 task_spawn_timer = 0
 
-# --------------------
+# -----------------------
 # AGENTS
-# --------------------
+# -----------------------
 drones = [
     Drone(1, 2, 2),
     Drone(2, 5, 8),
@@ -34,18 +34,16 @@ tasks = [
 
 coordinator = Coordinator()
 
-# --------------------
-# INITIAL TASK ASSIGNMENT
-# --------------------
+# -----------------------
+# INITIAL ASSIGNMENT
+# -----------------------
 for task in tasks:
 
-    assigned_drone = coordinator.assign_task(drones, task)
+    drone = coordinator.assign_task(drones, task)
 
-    if assigned_drone:
-
-        assigned_drone.target = (task.x, task.y)
-        assigned_drone.state = "DELIVERING"
-
+    if drone:
+        drone.target = (task.x, task.y)
+        drone.state = "DELIVERING"
         task.assigned = True
 
 
@@ -57,9 +55,9 @@ def draw_grid():
         pygame.draw.line(screen, (200, 200, 200), (0, y), (WIDTH, y))
 
 
-# --------------------
+# -----------------------
 # MAIN LOOP
-# --------------------
+# -----------------------
 running = True
 
 while running:
@@ -70,9 +68,9 @@ while running:
 
     screen.fill((255, 255, 255))
 
-    # --------------------
-    # SPAWN NEW TASKS
-    # --------------------
+    # -----------------------
+    # SPAWN TASKS
+    # -----------------------
     task_spawn_timer += 1
 
     if task_spawn_timer >= 50:
@@ -86,21 +84,24 @@ while running:
 
         task_spawn_timer = 0
 
-    # --------------------
-    # DRONE UPDATE LOGIC
-    # --------------------
+    # -----------------------
+    # BATTERY CHECK (OVERRIDE)
+    # -----------------------
     for drone in drones:
 
-        # battery check → go charge
-        if drone.battery < 20 and drone.state != "CHARGING":
+        if drone.battery < 20:
             drone.state = "CHARGING"
             drone.target = (CHARGER_X, CHARGER_Y)
 
+    # -----------------------
+    # MOVE DRONES
+    # -----------------------
+    for drone in drones:
         drone.move()
 
-    # --------------------
-    # TASK COMPLETION CHECK
-    # --------------------
+    # -----------------------
+    # CHECK TASK COMPLETION
+    # -----------------------
     for drone in drones:
 
         if drone.at_target():
@@ -115,29 +116,25 @@ while running:
                 drone.target = None
                 drone.state = "IDLE"
 
-    # --------------------
-    # ASSIGN NEW TASKS (FIXED SECTION)
-    # --------------------
+    # -----------------------
+    # ASSIGN NEW TASKS
+    # -----------------------
     for task in tasks:
 
-        if task.completed:
+        if task.completed or task.assigned:
             continue
 
-        if task.assigned:
-            continue
+        drone = coordinator.assign_task(drones, task)
 
-        assigned_drone = coordinator.assign_task(drones, task)
+        if drone:
 
-        if assigned_drone:
-
-            assigned_drone.target = (task.x, task.y)
-            assigned_drone.state = "DELIVERING"
-
+            drone.target = (task.x, task.y)
+            drone.state = "DELIVERING"
             task.assigned = True
 
-    # --------------------
-    # DRAWING
-    # --------------------
+    # -----------------------
+    # DRAW GRID
+    # -----------------------
     draw_grid()
 
     # charging station
@@ -147,12 +144,16 @@ while running:
         (CHARGER_X * CELL_SIZE, CHARGER_Y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
     )
 
-    # drones
+    # -----------------------
+    # DRAW DRONES
+    # -----------------------
     for drone in drones:
+
+        color = (255, 165, 0) if drone.state == "CHARGING" else (0, 0, 255)
 
         pygame.draw.circle(
             screen,
-            (0, 0, 255),
+            color,
             (
                 drone.x * CELL_SIZE + CELL_SIZE // 2,
                 drone.y * CELL_SIZE + CELL_SIZE // 2
@@ -161,13 +162,14 @@ while running:
         )
 
         state_text = font.render(drone.state, True, (0, 0, 0))
-
         battery_text = font.render(f"{int(drone.battery)}%", True, (0, 100, 0))
 
         screen.blit(state_text, (drone.x * CELL_SIZE, drone.y * CELL_SIZE - 15))
         screen.blit(battery_text, (drone.x * CELL_SIZE, drone.y * CELL_SIZE + 20))
 
-    # tasks
+    # -----------------------
+    # DRAW TASKS
+    # -----------------------
     for task in tasks:
 
         if task.completed:
