@@ -11,11 +11,15 @@ class Drone:
 
         self.battery = 100
 
+        self.state = "IDLE"
+
     def move(self):
 
         if self.target is None:
             return
 
+        self.battery -= 1
+        
         target_x, target_y = self.target
 
         if self.x < target_x:

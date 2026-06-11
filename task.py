@@ -6,3 +6,5 @@ class DeliveryTask:
         self.y = y
 
         self.completed = False
+
+        self.assigned = False
